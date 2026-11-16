@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SubmissionStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+  ERROR
+  TIMEOUT
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  password    String
+  name        String
+  role        Role         @default(USER)
+  createdAt   DateTime     @default(now())
+  submissions Submission[]
+}
+
+model Problem {
+  id          String       @id @default(uuid())
+  title       String
+  slug        String       @unique
+  // Path to meta.json inside the minio bucket, e.g. "problems/{id}/meta.json"
+  minioPath   String
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  submissions Submission[]
+}
+
+model Submission {
+  id         String           @id @default(uuid())
+  userId     String
+  problemId  String
+  language   String
+  code       String
+  status     SubmissionStatus @default(QUEUED)
+  totalTC    Int?
+  passedTC   Int?
+  // Weighted score 0-100: sum(weight of AC testcases) / sum(all weights) * 100.
+  // Distinct from passedTC/totalTC, which are an unweighted pass count.
+  score      Float?
+  results    Json?
+  errorMsg   String?
+  createdAt  DateTime         @default(now())
+  finishedAt DateTime?
+
+  user    User    @relation(fields: [userId], references: [id])
+  problem Problem @relation(fields: [problemId], references: [id])
+
+  @@index([userId])
+  @@index([problemId])
+}

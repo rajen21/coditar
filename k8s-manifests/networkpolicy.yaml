@@ -1,0 +1,16 @@
+# Exec pods get no network access at all - untrusted code should never be
+# able to phone out, hit the metadata service, or reach other pods.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-egress
+  namespace: code-exec
+spec:
+  podSelector:
+    matchLabels:
+      app: code-exec
+  policyTypes:
+    - Egress
+    - Ingress
+  egress: []
+  ingress: []
